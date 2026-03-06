@@ -33,6 +33,16 @@ export type MarketBenchmark = {
   payrollRateMarket: number;
   marginCompany: number;
   marginMarket: number;
+  dataset?: {
+    metadata?: {
+      source?: string;
+      sources?: Array<{
+        url: string;
+        dataset: string;
+        updatedAt: string | null;
+      }>;
+    };
+  } | null;
 };
 
 export type Report = {

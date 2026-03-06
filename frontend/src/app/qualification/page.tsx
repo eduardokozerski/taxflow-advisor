@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createCompanyAction } from "@/store/company/actions";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -10,6 +10,21 @@ import {
 } from "@/store/company/selectors";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+const companySizeOptions = ["Micro", "Pequena", "Média", "Grande"] as const;
+const businessSectorOptions = [
+  "Comércio",
+  "Serviços",
+  "Indústria",
+  "Tecnologia",
+  "Saúde",
+  "Agronegócio",
+  "Construção",
+  "Transporte",
+  "Educação",
+  "Outro",
+] as const;
 
 export default function QualificationPage() {
   const dispatch = useAppDispatch();
@@ -21,6 +36,12 @@ export default function QualificationPage() {
     businessSector: "",
     companySize: "",
   });
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -47,8 +68,7 @@ export default function QualificationPage() {
             }
             required
           />
-          <Input
-            placeholder="Setor de atuação"
+          <select
             value={form.businessSector}
             onChange={(event) =>
               setForm((state) => ({
@@ -56,10 +76,19 @@ export default function QualificationPage() {
                 businessSector: event.target.value,
               }))
             }
+            className="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
             required
-          />
-          <Input
-            placeholder="Porte da empresa"
+          >
+            <option value="" disabled>
+              Selecione o setor de atuação
+            </option>
+            {businessSectorOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+          <select
             value={form.companySize}
             onChange={(event) =>
               setForm((state) => ({
@@ -67,9 +96,18 @@ export default function QualificationPage() {
                 companySize: event.target.value,
               }))
             }
+            className="h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
             required
-          />
-          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          >
+            <option value="" disabled>
+              Selecione o porte da empresa
+            </option>
+            {companySizeOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
           <Button type="submit" className="mt-2" disabled={loading}>
             {loading ? "Salvando..." : "Continuar"}
           </Button>

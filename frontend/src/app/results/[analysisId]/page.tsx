@@ -16,6 +16,7 @@ import {
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { MarketComparisonChart } from "@/components/marketComparisonChart";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -25,6 +26,16 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
 const percentFormatter = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 2,
 });
+
+const formatTaxRegime = (regime: string) => {
+  const labels: Record<string, string> = {
+    simplesNacional: "Simples Nacional",
+    lucroPresumido: "Lucro Presumido",
+    lucroReal: "Lucro Real",
+  };
+
+  return labels[regime] ?? regime;
+};
 
 export default function ResultsPage() {
   const dispatch = useAppDispatch();
@@ -40,6 +51,12 @@ export default function ResultsPage() {
     }
   }, [dispatch, params.analysisId]);
 
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
   const onRecalculateAnalysis = async () => {
     if (!params.analysisId) {
       return;
@@ -47,6 +64,22 @@ export default function ResultsPage() {
 
     await dispatch(recalculateAnalysisByIdAction(params.analysisId));
   };
+
+  const onDownloadReport = () => {
+    const filePath = analysis?.report?.filePath;
+
+    if (!filePath) {
+      toast.error("Relatório indisponível no momento");
+      return;
+    }
+
+    window.open(filePath, "_blank", "noopener,noreferrer");
+  };
+
+  const benchmarkSources =
+    analysis?.marketBenchmark?.dataset?.metadata?.sources;
+  const benchmarkSourceLabel =
+    analysis?.marketBenchmark?.dataset?.metadata?.source;
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl p-6">
@@ -74,7 +107,6 @@ export default function ResultsPage() {
         </div>
 
         {loading ? <p>Carregando análise...</p> : null}
-        {error ? <p className="text-red-300">{error}</p> : null}
 
         {analysis ? (
           <div className="grid gap-6">
@@ -128,7 +160,9 @@ export default function ResultsPage() {
                       key={item.regime}
                       className="liquid-chip rounded-xl p-3"
                     >
-                      <p className="font-medium">{item.regime}</p>
+                      <p className="font-medium">
+                        {formatTaxRegime(item.regime)}
+                      </p>
                       <p>
                         Alíquota estimada: {item.rateMin}% - {item.rateMax}%
                       </p>
@@ -139,6 +173,26 @@ export default function ResultsPage() {
                     </div>
                   ))}
                 </div>
+                {benchmarkSources && benchmarkSources.length > 0 ? (
+                  <div className="mt-4 grid gap-2 rounded-xl border border-zinc-200/50 p-3 text-sm dark:border-zinc-700/50">
+                    <p className="font-medium">
+                      Fonte de dados de mercado:{" "}
+                      {benchmarkSourceLabel ?? "Base externa"}
+                    </p>
+                    {benchmarkSources.map((source) => (
+                      <a
+                        key={source.url}
+                        href={source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline decoration-zinc-400 underline-offset-2"
+                      >
+                        {source.dataset}
+                        {source.updatedAt ? ` (${source.updatedAt})` : ""}
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
               </article>
 
               <article className="liquid-glass rounded-2xl p-5">
@@ -155,12 +209,15 @@ export default function ResultsPage() {
                     </span>
                   ))}
                 </div>
-                <div className="mt-5 text-sm">
-                  <p>
-                    Relatório:{" "}
-                    {analysis.report?.filePath ?? "Aguardando geração"}
-                  </p>
-                  <p>Versão: {analysis.report?.version ?? "-"}</p>
+                <div className="mt-5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onDownloadReport}
+                    disabled={!analysis.report?.filePath}
+                  >
+                    Baixar relatório
+                  </Button>
                 </div>
               </article>
             </section>
