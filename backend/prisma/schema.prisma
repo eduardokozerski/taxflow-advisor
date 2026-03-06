@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Company {
+  id             String     @id @default(cuid())
+  legalName      String
+  tradeName      String?
+  taxId          String?
+  businessSector String
+  companySize    String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  analyses       Analysis[]
+}
+
+model Analysis {
+  id                   String           @id @default(cuid())
+  companyId            String
+  status               AnalysisStatus   @default(draft)
+  monthlyRevenue       Float
+  employeesCount       Int
+  payrollAmount        Float
+  taxesPaidAmount      Float
+  operationalCostsAmount Float
+  recommendedServices  Json?
+  completedAt          DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  company              Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  financialMetrics     FinancialMetrics?
+  taxSimulations       TaxSimulation[]
+  scoreResult          ScoreResult?
+  marketBenchmark      MarketBenchmark?
+  report               Report?
+  lead                 Lead?
+}
+
+model FinancialMetrics {
+  id               String   @id @default(cuid())
+  analysisId       String   @unique
+  effectiveTaxRate Float
+  payrollRate      Float
+  operationalMargin Float
+  computedAt       DateTime @default(now())
+  analysis         Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model TaxSimulation {
+  id               String     @id @default(cuid())
+  analysisId       String
+  regime           TaxRegime
+  rateMin          Float
+  rateMax          Float
+  monthlyTaxEstimate Float
+  annualTaxEstimate Float
+  disclaimer       String
+  createdAt        DateTime   @default(now())
+  analysis         Analysis   @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model ScoreResult {
+  id            String         @id @default(cuid())
+  analysisId    String         @unique
+  scoreValue    Int
+  classification ScoreClass
+  scoreBreakdown Json?
+  computedAt    DateTime       @default(now())
+  analysis      Analysis       @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model MarketBenchmark {
+  id                String   @id @default(cuid())
+  analysisId         String   @unique
+  sectorReference    String
+  taxRateCompany     Float
+  taxRateMarket      Float
+  payrollRateCompany Float
+  payrollRateMarket  Float
+  marginCompany      Float
+  marginMarket       Float
+  dataset            Json?
+  computedAt         DateTime @default(now())
+  analysis           Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id         String   @id @default(cuid())
+  analysisId String   @unique
+  filePath   String
+  version    String
+  generatedAt DateTime @default(now())
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model Lead {
+  id              String       @id @default(cuid())
+  analysisId      String       @unique
+  contactName     String?
+  contactEmail    String?
+  contactPhone    String?
+  preferredChannel LeadChannel
+  message         String?
+  createdAt       DateTime     @default(now())
+  analysis        Analysis     @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+enum AnalysisStatus {
+  draft
+  processing
+  completed
+  failed
+}
+
+enum TaxRegime {
+  simplesNacional
+  lucroPresumido
+  lucroReal
+}
+
+enum ScoreClass {
+  baixa
+  media
+  alta
+}
+
+enum LeadChannel {
+  whatsapp
+  formulario
+  email
+  crm
+}
